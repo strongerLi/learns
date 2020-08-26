@@ -30,7 +30,8 @@
           return this.visible;
         },
         set() {
-          this.$emit("update:visible");
+          // 其实这里不用$emit,因为子组件已经$emit了，会自动传给父组件的
+          // this.$emit("update:visible");
         }
       }
     },
