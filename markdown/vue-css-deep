@@ -1,0 +1,9 @@
+在vue中，如果css加上了scoped作用域，生成的css会加上作用域属性，如：
+
+.el-form[data-v-a3ccadca] .el-input__inner[data-v-a3ccadca] {}
+el-input__inner是子组件el-input内部生成的，并无[data-v-a3ccadca]属性，因此该样式无效，需生成如下样式
+
+.el-form[data-v-a3ccadca] .el-input__inner {}
+可使用深度选择器 /deep/
+
+.el-form /deep/ .el-input__inner {}
