@@ -1,0 +1,51 @@
+### 1.全局的变量一般是不会被垃圾回收掉的
+```
+function fn1() {
+    // 此处变量name未被声明
+    name = new Array(99999999)
+}
+
+fn1()
+```
+> 此时这种情况就会在全局自动创建一个变量name，并将一个很大的数组赋值给name，又因为是全局变量，所以该内存空间就一直不会被释放
+
+### 2.闭包使用不当
+
+### 3.分离的DOM节点
+什么叫DOM节点？假设你手动移除了某个dom节点，本应释放该dom节点所占用的内存，但却因为疏忽导致某处代码仍对该被移除节点有引用，最终导致该节点所占内存无法被释放，例如这种情况：
+```
+<div id="root">
+    <div class="child">我是子元素</div>
+    <button>移除</button>
+</div>
+<script>
+
+    let btn = document.querySelector('button')
+    let child = document.querySelector('.child')
+    let root = document.querySelector('#root')
+    
+    btn.addEventListener('click', function() {
+        root.removeChild(child)
+    })
+
+</script>
+```
+> 该代码所做的操作就是点击按钮后移除.child的节点，虽然点击后，该节点确实从dom被移除了，但全局变量child仍对该节点有引用，所以导致该节点的内存一直无法被释放，可以尝试用Memory的快照功能来检测一下，如图所示：
+同样的先记录一下初始状态的快照，然后点击移除按钮后，再点击一次快照，此时内存大小我们看不出什么变化，因为移除的节点占用的内存实在太小了可以忽略不计，但我们可以点击第二条快照记录，在筛选框里输入detached，于是就会展示所有脱离了却又未被清除的节点对象
+
+### 4.控制台的打印
+控制台的打印也会造成内存泄漏吗？？？？是的呀，如果浏览器不一直保存着我们打印对象的信息，我们为何能在每次打开控制的Console时看到具体的数据呢？先来看一段测试代码：
+```
+<button>按钮</button>
+<script>
+    document.querySelector('button').addEventListener('click', function() {
+        let obj = new Array(1000000)
+
+        console.log(obj);
+    })
+</script>
+```
+> 开始录制，先触发一次垃圾回收清除初始的内存，然后点击三次按钮，即执行了三次点击事件，最后再触发一次垃圾回收。查看录制结果发现JS Heap曲线成阶梯上升，并且最终保持的高度比初始基准线高很多，这说明每次执行点击事件创建的很大的数组对象obj都因为console.log被浏览器保存了下来并且无法被回收
+
+### 5.遗忘的定时器
+大家在平时用到了定时器，如果在用不到定时器后一定要清除掉，否则就会出现本例中的情况。除了setTimeout和setInterval，其实浏览器还提供了一个API也可能就存在这样的问题，那就是requestAnimationFrame
